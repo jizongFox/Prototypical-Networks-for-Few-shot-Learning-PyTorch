@@ -8,39 +8,46 @@ import errno
 import torch
 import os
 
-'''
+"""
 Inspired by https://github.com/pytorch/vision/pull/46
-'''
+"""
 
 IMG_CACHE = {}
 
 
 class OmniglotDataset(data.Dataset):
-    vinalys_baseurl = 'https://raw.githubusercontent.com/jakesnell/prototypical-networks/master/data/omniglot/splits/vinyals/'
+    vinalys_baseurl = "https://raw.githubusercontent.com/jakesnell/prototypical-networks/master/data/omniglot/splits/vinyals/"
     vinyals_split_sizes = {
-        'test': vinalys_baseurl + 'test.txt',
-        'train': vinalys_baseurl + 'train.txt',
-        'trainval': vinalys_baseurl + 'trainval.txt',
-        'val': vinalys_baseurl + 'val.txt',
+        "test": vinalys_baseurl + "test.txt",
+        "train": vinalys_baseurl + "train.txt",
+        "trainval": vinalys_baseurl + "trainval.txt",
+        "val": vinalys_baseurl + "val.txt",
     }
 
     urls = [
-        'https://github.com/brendenlake/omniglot/raw/master/python/images_background.zip',
-        'https://github.com/brendenlake/omniglot/raw/master/python/images_evaluation.zip'
+        "https://github.com/brendenlake/omniglot/raw/master/python/images_background.zip",
+        "https://github.com/brendenlake/omniglot/raw/master/python/images_evaluation.zip",
     ]
-    splits_folder = os.path.join('splits', 'vinyals')
-    raw_folder = 'raw'
-    processed_folder = 'data'
+    splits_folder = os.path.join("splits", "vinyals")
+    raw_folder = "raw"
+    processed_folder = "data"
 
-    def __init__(self, mode='train', root='..' + os.sep + 'dataset', transform=None, target_transform=None, download=True):
-        '''
+    def __init__(
+        self,
+        mode="train",
+        root=".." + os.sep + "dataset",
+        transform=None,
+        target_transform=None,
+        download=True,
+    ):
+        """
         The items are (filename,category). The index of all the categories can be found in self.idx_classes
         Args:
         - root: the directory where the dataset will be stored
         - transform: how to transform the input
         - target_transform: how to transform the target
         - download: need to download the dataset
-        '''
+        """
         super(OmniglotDataset, self).__init__()
         self.root = root
         self.transform = transform
@@ -51,16 +58,18 @@ class OmniglotDataset(data.Dataset):
 
         if not self._check_exists():
             raise RuntimeError(
-                'Dataset not found. You can use download=True to download it')
-        self.classes = get_current_classes(os.path.join(
-            self.root, self.splits_folder, mode + '.txt'))
-        self.all_items = find_items(os.path.join(
-            self.root, self.processed_folder), self.classes)
+                "Dataset not found. You can use download=True to download it"
+            )
+        self.classes = get_current_classes(
+            os.path.join(self.root, self.splits_folder, mode + ".txt")
+        )
+        self.all_items = find_items(
+            os.path.join(self.root, self.processed_folder), self.classes
+        )
 
         self.idx_classes = index_classes(self.all_items)
 
-        paths, self.y = zip(*[self.get_path_label(pl)
-                              for pl in range(len(self))])
+        paths, self.y = zip(*[self.get_path_label(pl) for pl in range(len(self))])
 
         self.x = map(load_img, paths, range(len(paths)))
         self.x = list(self.x)
@@ -78,8 +87,7 @@ class OmniglotDataset(data.Dataset):
         filename = self.all_items[index][0]
         rot = self.all_items[index][-1]
         img = str.join(os.sep, [self.all_items[index][2], filename]) + rot
-        target = self.idx_classes[self.all_items[index]
-                                  [1] + self.all_items[index][-1]]
+        target = self.idx_classes[self.all_items[index][1] + self.all_items[index][-1]]
         if self.target_transform is not None:
             target = self.target_transform(target)
 
@@ -106,27 +114,27 @@ class OmniglotDataset(data.Dataset):
                 raise
 
         for k, url in self.vinyals_split_sizes.items():
-            print('== Downloading ' + url)
+            print("== Downloading " + url)
             data = urllib.request.urlopen(url)
             filename = url.rpartition(os.sep)[-1]
             file_path = os.path.join(self.root, self.splits_folder, filename)
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(data.read())
 
         for url in self.urls:
-            print('== Downloading ' + url)
+            print("== Downloading " + url)
             data = urllib.request.urlopen(url)
             filename = url.rpartition(os.sep)[2]
             file_path = os.path.join(self.root, self.raw_folder, filename)
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(data.read())
             orig_root = os.path.join(self.root, self.raw_folder)
             print("== Unzip from " + file_path + " to " + orig_root)
-            zip_ref = zipfile.ZipFile(file_path, 'r')
+            zip_ref = zipfile.ZipFile(file_path, "r")
             zip_ref.extractall(orig_root)
             zip_ref.close()
         file_processed = os.path.join(self.root, self.processed_folder)
-        for p in ['images_background', 'images_evaluation']:
+        for p in ["images_background", "images_evaluation"]:
             for f in os.listdir(os.path.join(orig_root, p)):
                 shutil.move(os.path.join(orig_root, p, f), file_processed)
             os.rmdir(os.path.join(orig_root, p))
@@ -135,7 +143,7 @@ class OmniglotDataset(data.Dataset):
 
 def find_items(root_dir, classes):
     retour = []
-    rots = [os.sep + 'rot000', os.sep + 'rot090', os.sep + 'rot180', os.sep + 'rot270']
+    rots = [os.sep + "rot000", os.sep + "rot090", os.sep + "rot180", os.sep + "rot270"]
     for (root, dirs, files) in os.walk(root_dir):
         for f in files:
             r = root.split(os.sep)
@@ -151,7 +159,7 @@ def find_items(root_dir, classes):
 def index_classes(items):
     idx = {}
     for i in items:
-        if (not i[1] + i[-1] in idx):
+        if not i[1] + i[-1] in idx:
             idx[i[1] + i[-1]] = len(idx)
     print("== Dataset: Found %d classes" % len(idx))
     return idx
@@ -159,12 +167,12 @@ def index_classes(items):
 
 def get_current_classes(fname):
     with open(fname) as f:
-        classes = f.read().replace('/', os.sep).splitlines()
+        classes = f.read().replace("/", os.sep).splitlines()
     return classes
 
 
 def load_img(path, idx):
-    path, rot = path.split(os.sep + 'rot')
+    path, rot = path.split(os.sep + "rot")
     if path in IMG_CACHE:
         x = IMG_CACHE[path]
     else:
